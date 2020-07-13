@@ -5,6 +5,7 @@ from .captcha_recognize import captcha_recognize
 import pandas as pd
 import io
 import time
+"""测试"""
 
 class SimpleTHSTrader:
     """ 定义一些常量 """
@@ -89,7 +90,7 @@ class SimpleTHSTrader:
                 time.sleep(1)
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0])==0:
-                print('没有其他提示信息。')
+                print('没有其他提示，本次操作结束。')
                 break
             else: # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
@@ -115,7 +116,7 @@ class SimpleTHSTrader:
                 time.sleep(1)
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0])==0:
-                print('没有其他提示信息。')
+                print('没有其他提示，本次操作结束。')
                 break
             else: # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
@@ -142,7 +143,7 @@ class SimpleTHSTrader:
                 time.sleep(1)
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0])==0:
-                print('没有其他提示信息。')
+                print('没有其他提示，本次操作结束。')
                 break
             else: # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
@@ -245,7 +246,7 @@ class SimpleTHSTrader:
                 print('超出涨跌停限制，已取消下单')  # 跳出到return
                 break
             elif len(self.app.top_window().Static.texts()[0])==0:
-                print("没有其他提示了。")
+                print("没有其他提示，本次操作结束。")
                 break
             else: # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])

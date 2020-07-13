@@ -8,6 +8,8 @@ from pywinauto import keyboard
 
 from .captcha_recognize import captcha_recognize
 
+"""做一次发布yaya"""
+
 class SimpleTHSTrader:
     """ 定义一些常量 """
 

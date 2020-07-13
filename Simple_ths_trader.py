@@ -6,7 +6,7 @@ import pandas as pd
 import io
 import time
 import pylint
-"""测试一下再一下一下"""
+"""测试一下再一下一下  """
 
 class SimpleTHSTrader:
     """ 定义一些常量 """

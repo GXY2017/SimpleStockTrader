@@ -1,12 +1,12 @@
 # Purpose of SimpleStockTrader
 1. To automate the whole process when trading China onshore stocks, convertible bonds and funds.
-2. List of compatible broker systems
+2. List of compatible broker systems  
     (1) Oriant Securities, 东方证券同花顺独立交易系统
 # Requirements
 1. Python 3.x but avoid Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867). 
-2. Open account with your broker
-    (1) Inform your broker of the markets you want to trade, Shanghai A share, Shenzhen A share, ETFs, futures, ETF options, etc..
-    (2) Account ID, or Fund ID
+2. Open account with your broker  
+    (1) Inform your broker of the markets you want to trade, Shanghai A share, Shenzhen A share, ETFs, futures, ETF options, etc..  
+    (2) Account ID, or Fund ID  
     (3) Your password
 # Installation
 1. install pywinauto and pytesseract

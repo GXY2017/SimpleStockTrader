@@ -16,7 +16,7 @@
 1. Log in 
 ```python
 from Simple_ths_trader import SimpleTHSTrader
-trader = SimpleTHSTrader(r"C:\东方同花顺独立下单\xiadan.exe") 
+trader = SimpleTHSTrader(r"C:\东方同花顺独立下单\xiadan.exe") # broker system address
 trader.login("ACCOUNTID","PASSWORD")
 ```
 The result
@@ -33,7 +33,7 @@ The result
 ````python
 import time
 t0 = time.process_time()
-trader.sell('600398',6.4,100) # 跳出一个查询成交情况的窗口
+trader.sell('600398',6.4,100) # (stock code, price, number of shares)
 t1 = time.process_time()
 print("使用时间： ", t1-t0)
 ````

@@ -51,7 +51,7 @@ The result
 ````
 # Notices in Coding with Pywinauto
 1. Use short-cut keys instead of looking for windows or buttons. 
-2. Locate window with window specfications. 
+2. Locate window with window specifications instead of general names.
 
 # Up Coming Tasks
 1. connect to more brokers

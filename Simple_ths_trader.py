@@ -5,7 +5,7 @@ from .captcha_recognize import captcha_recognize
 import pandas as pd
 import io
 import time
-"""测试一下再一下一下五一下"""
+"""测试一下再一下一下"""
 
 class SimpleTHSTrader:
     """ 定义一些常量 """

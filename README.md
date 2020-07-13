@@ -6,7 +6,7 @@
 1. Python 3.x but avoid Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867). 
 2. Open account with your broker  
     (1) Inform your broker of the markets you want to trade, Shanghai A share, Shenzhen A share, ETFs, futures, ETF options, etc..  
-    (2) Account ID, or Fund ID  
+    (2) Account ID, or Funding Account ID  
     (3) Your password
 # Installation
 1. install pywinauto and pytesseract

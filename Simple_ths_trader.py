@@ -5,6 +5,7 @@ from .captcha_recognize import captcha_recognize
 import pandas as pd
 import io
 import time
+import pylint
 """测试一下再一下一下"""
 
 class SimpleTHSTrader:

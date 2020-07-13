@@ -15,7 +15,7 @@
 # Examples
 1. Log in 
 ```python
-from Simple_ths_trader import SimpleTHSTrader
+import SimpleTHSTrader
 trader = SimpleTHSTrader(r"C:\东方同花顺独立下单\xiadan.exe") # broker system address
 trader.login("ACCOUNTID","PASSWORD")
 ```

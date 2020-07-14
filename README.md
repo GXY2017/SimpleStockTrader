@@ -1,7 +1,8 @@
 # Purpose of SimpleStockTrader  
 1. To automate the whole process when trading China onshore stocks, convertible bonds and funds.  
 2. List of compatible broker systems  
-    (1) Oriant Securities, 东方证券同花顺独立交易系统  
+    (1) Orient Securities, 东方证券同花顺独立交易系统  
+    (2) Citic Securities, 中证证券至胜全能版独立交易系统
 # Requirements  
 1. Python 3.x but avoid Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867).   
 2. Better to use python 32 bit. 64 bit Python you will get a warning.  
@@ -29,10 +30,10 @@ and causes log in faliure.
 # Tips to Speed Up A Little with Pywinauto  
 1. Use short-cut keys instead of looking for windows or buttons.  
 2. Locate window with window specifications instead of general names/types.  
-3. Use window().wait('ready') instead of time.sleep()  
+3. Use window().wait('ready',timeout) instead of time.sleep() when waiting. 
 
 # What's Next  
-1. connect to more brokers
+1. connect to more brokers  
 
 # Examples
 1. Log in 
@@ -41,7 +42,9 @@ import SimpleTHSTrader
 trader = SimpleTHSTrader(r"C:\东方同花顺独立下单\xiadan.exe") # broker system address
 trader.login("ACCOUNTID","PASSWORD")
 ```
-The result
+For one broker software, you can create 2 instances. But this is not necessary. You can change codes in 
+login() function to achieve this.        
+The result:
 ```shell script
 登录成功！以下关闭各种信息窗口：
 口: "['']" 
@@ -51,25 +54,26 @@ The result
 关闭该窗口: "['']" 
 关闭该窗口: "['']" 
 ```
+Login Citic Security needs manually input password and captcha. 
+
 2. Send Order
 ````python
 import time
 t0 = time.process_time()
-trader.sell('113022',153.20,25) # (stock code, price, number of shares)
+trader.buy('128036',100,10) # (stock code, price, number of shares)
 t1 = time.process_time()
 print("使用时间： ", t1-t0)
 ````
-The result
+The result:
 ````shell script
 股东账号：XXXXXXXX
-证券代码：113022
-卖出价格：153.200
-卖出数量：25
-预估金额：38223.400
-您是否确定以上卖出委托？
-您的卖出委托已成功提交，合同编号：3181。
+证券代码：128036
+买入价格：100.000
+买入数量：10
+您是否确定以上买入委托？
+提交失败：委托在非交易时间。
 没有其他提示，本次操作结束。
-使用时间：  0.78125
+使用时间：  0.390625
 ````
 
 

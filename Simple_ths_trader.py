@@ -1,4 +1,5 @@
 import io
+import time
 
 import pandas as pd
 import pywinauto
@@ -6,8 +7,6 @@ from pywinauto import clipboard
 from pywinauto import keyboard
 
 from .captcha_recognize import captcha_recognize
-
-"""做一次发布yaya还是不行呀，再试试，"""
 
 class SimpleTHSTrader:
     """ 定义一些常量 """
@@ -19,24 +18,34 @@ class SimpleTHSTrader:
         """
         self.exe_path = exe_path
         self.title = main_wnd_title
+        self.close_client()  # 关闭已有的交易端，避免同一账号重复登录。不关闭多开的登录界面
+        self.app = pywinauto.Application().start(self.exe_path, timeout=10)  # 生成后台实例
+        self.app.top_window().wait("ready", timeout=10) # 等待登录界面打开
         print("成功启动交易软件。")
 
     def login(self, id: str, pwd: str):
-        self.app = pywinauto.Application().start(self.exe_path, timeout=10)  # 打开登录界面
-        self.close_client()  # 关闭已有的交易端（已进入交易界面）
         self.app.Dialog.ComboBox.Edit.set_edit_text(id)  # 资金账户
         self.app.Dialog.Edit2.set_edit_text(pwd)  # 交易密码
         self.app.Dialog.Edit3.set_edit_text(pwd)  # 通信密码
-        self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
-        self.app.window(title=self.title).wait("ready",timeout=10)
-        print("登录成功！以下关闭各种信息窗口：")
-        self.main_wnd = self.app.window(title=self.title)
-        self.close_tsxx()  # 关闭所有通知信息
-        #print("登录有问题，请自行查找原因！")
+        if ("中信证券") in self.title:  # 无法自动登录
+            print("10秒输入密码与验证码")
+            time.sleep(10)
+            self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
+        else:
+            self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
+        try:
+            self.app.window(title=self.title).wait("ready",timeout=10)
+            print("登录成功！以下关闭各种信息窗口：")
+            self.main_wnd = self.app.window(title=self.title)
+            self.close_tsxx()  # 关闭所有通知信息
+
+        except:
+            print("登录有问题！请查找原因并重新登录。")
 
     # 关闭提示信息
     def close_tsxx(self):
         '''
+        关闭同时弹出的提示窗口。
         1. 提示信息窗口编号都是'#32770'，一下子会跳出来好几个。
         2. app.windows()[0] 等价于 app.window()。
         3. 提示信息窗口都是独立(非内嵌的)的。
@@ -45,7 +54,16 @@ class SimpleTHSTrader:
         handles = self.app.windows(class_name='#32770')
         for i in list(range(0, len(handles))):
             print(u'...关闭该窗口: "%s" ' % (handles[i].texts()))
-            handles[i].close()
+            try:
+                handles[i].close()
+            except:
+                handles[i].type_keys("{ENTER}") # 正在清算
+        # 跳出窗口
+        try:
+            self.app.top_window().child_window(title="新股申购").wait("ready",timeout=5)
+            self.app.top_window().child_window(title="新股申购").close()
+        except:
+            print('没有其他弹出窗口')
         print(u'\n==> 所有提示信息窗口 已经关闭!')
 
     # 关闭其他同名交易客户端，self.title
@@ -189,22 +207,34 @@ class SimpleTHSTrader:
         """
         self.main_wnd.set_focus()
         self.__select_menu(['查询[F4]', '资金股票'])
-        self.close_tsxx()  # 关闭各种提示信息
+
+        # 关闭各种提示信息
+        try:
+            self.app.window(class_name="#32770",found_index=0).wait('ready',timeout=5)
+            self.close_tsxx()
+        except:
+            pass
+
         self.main_wnd.child_window(class_name="Static", found_index=0).wait("ready", timeout= 2)
         # 有啥打印啥。
         i = 0
         while True:
-            if not self.main_wnd.child_window(class_name="Static", found_index=i).exists():
+            print(self.main_wnd.child_window(class_name="Static", found_index=i).window_text())
+            i += 1
+            if "最近查询时间" in self.main_wnd.child_window(class_name="Static", found_index=i).window_text():
+                print('查询完毕', self.main_wnd.child_window(class_name="Static", found_index=i).window_text())
                 break
-            else:
-                print(self.main_wnd.child_window(class_name="Static", found_index=i).window_text())
-                i += 1
 
     def get_position(self):
         """ 获取持仓 """
         self.main_wnd.set_focus()
         self.__select_menu(['查询[F4]', '资金股票'])
-        self.close_tsxx()  # 关闭提示信息
+        # 关闭各种提示信息
+        try:
+            self.app.window(class_name="#32770",found_index=0).wait('ready',timeout=5)
+            self.close_tsxx()
+        except:
+            pass
         return self.__get_grid_data()
 
     def get_today_order_sent(self):
@@ -218,7 +248,7 @@ class SimpleTHSTrader:
         self.__select_menu(['查询[F4]', '当日成交'])
         return self.__get_grid_data()
 
-    def get_bills(self):
+    def get_bills(self,require_dates = True):
         """
         简单实现默认时间段内的对账单功能
         1. 不支持自定义查询日期段
@@ -226,8 +256,11 @@ class SimpleTHSTrader:
         3. 也没碰到过要翻页的情况
         """
         self.main_wnd.set_focus()
-        self.__select_menu(['查询[F4]', '对 账 单'])
-        return self.__get_grid_data()
+        if "中信证券" in self.title:
+            self.__select_menu(['查询[F4]', '对账单'])
+        else:
+            self.__select_menu(['查询[F4]', '对 账 单'])
+        return self.__get_grid_data(require_dates)
 
     def __trade(self, stock_no, price, amount):
         """
@@ -267,37 +300,54 @@ class SimpleTHSTrader:
                 self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
                 continue
 
-    def __get_grid_data(self, is_order_sent=False):
-        """ 获取grid里面的数据，在第2个Grid中 """
-        self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=1).set_focus()  # .right_click()  # 模拟右键
-        # 复制Grid
-        if not is_order_sent:  # 不是查询已发出委托
-            keyboard.send_keys('^c')  # Ctrl+C
+    def __get_grid_data(self, require_dates = False):
+        """ GRID数据有时有两个子窗口。一个填日期，一个显示数据。"""
+        if require_dates:
+            self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=1).set_focus()  # .right_click()  # 模拟右键
+        else:
+            self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=0).set_focus()
+        # 复制
+        keyboard.send_keys('^c')  # Ctrl+C
         # 跳出验证码窗口
         self.app.top_window().wait('ready',timeout=2)
-        while True:
+        # 验证码错误就重新输入
+        trial = 1
+        while trial <=5: # 最多尝试5次识别，避免循环
             # 识别并输入验证码，确认关闭验证码窗口
+            print("最多识别5次，现在第%d次"%trial)
             self.app.top_window().child_window(class_name='Edit').set_text(self.__get_char())
             self.app.top_window().child_window(class_name='Edit').type_keys("{ENTER}")
+            trial += 1
             try:
-                print(self.app.top_window().child_window(control_id=0x966, class_name='Static').child_window_text())
+                "验证码错误" in self.app.top_window().window(class_name="Static",title="验证码错误！！").texts()
             except:
-                break
+                break #验证码有错，则继续
 
         data = clipboard.GetData()
         df = pd.read_csv(io.StringIO(data), delimiter='\t', na_filter=False)
         return df.to_dict('records')
 
-    def __get_char(self):
+    def __get_char(self, threshold=200):
         """
         识别验证码，使用时必须定位到验证码窗口。返回 str
         会将整个窗口截取为图片，所以，窗口不能太大。但child_window(title='提示')
         """
         file_path = "tmp.png"
 
-        self.app.top_window().child_window(control_id=0x965, class_name='Static'). \
+        self.app.top_window().child_window(control_id=0x965, class_name='Static').\
             capture_as_image().save(file_path)  # 保存验证码
-        captcha_num = captcha_recognize(file_path)  # 识别验证码
+        captcha_num = captcha_recognize(file_path, threshold)  # 识别验证码
+        print("captcha result-->", captcha_num)
+        return captcha_num
+
+    def __get_char_login(self, threshold=200):
+        """
+        在登录界面就需要识别验证码。
+        """
+        file_path = "tmp.png"
+
+        self.app.top_window().capture_as_image().save(file_path)  # 保存验证码
+        captcha_num = captcha_recognize(file_path, threshold)  # 识别验证码
         print("captcha result-->", captcha_num)
         return captcha_num
 

@@ -2,7 +2,7 @@
 1. To automate the whole process when trading China onshore stocks, convertible bonds and funds.  
 2. List of compatible broker systems  
     (1) Orient Securities, 东方证券同花顺独立交易系统  
-    (2) Citic Securities, 中证证券至胜全能版独立交易系统
+    (2) Citic Securities, 中信证券至胜全能版独立交易系统
 # Requirements  
 1. Python 3.x but avoid Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867).   
 2. Better to use python 32 bit. 64 bit Python you will get a warning.  

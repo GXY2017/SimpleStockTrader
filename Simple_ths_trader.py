@@ -1,5 +1,4 @@
 import io
-import time
 
 import pandas as pd
 import pywinauto
@@ -13,11 +12,14 @@ from .captcha_recognize import captcha_recognize
 class SimpleTHSTrader:
     """ 定义一些常量 """
 
-    def __init__(self, exe_path):
-        """此处增加自动登录功能"""
+    def __init__(self, exe_path, main_wnd_title):
+        """
+        exe_path：经纪商软件exe路径
+        main_wnd_title：主交易界面标题，inspect 中查找 Name要素。
+        """
         self.exe_path = exe_path
-        self.title = u'网上股票交易系统5.0'  # 用inspect查找主交易界面的名称，不是登录界面
-        print("成功创建一个新应用实例。")
+        self.title = main_wnd_title
+        print("成功启动交易软件。")
 
     def login(self, id: str, pwd: str):
         self.app = pywinauto.Application().start(self.exe_path, timeout=10)  # 打开登录界面
@@ -26,14 +28,11 @@ class SimpleTHSTrader:
         self.app.Dialog.Edit2.set_edit_text(pwd)  # 交易密码
         self.app.Dialog.Edit3.set_edit_text(pwd)  # 通信密码
         self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
-        time.sleep(10)  # 等待窗口打开
-        if self.app.window(title=self.title):
-            print("登录成功！以下关闭各种信息窗口：")
-            self.main_wnd = self.app.window(title=self.title)
-            time.sleep(3)  # 等待窗口打开, 不然会提示“未收到服务器”之类的
-            self.close_tsxx()  # 关闭所有通知信息
-        else:
-            print("登录有问题，请自行查找原因！")
+        self.app.window(title=self.title).wait("ready",timeout=10)
+        print("登录成功！以下关闭各种信息窗口：")
+        self.main_wnd = self.app.window(title=self.title)
+        self.close_tsxx()  # 关闭所有通知信息
+        #print("登录有问题，请自行查找原因！")
 
     # 关闭提示信息
     def close_tsxx(self):
@@ -80,8 +79,7 @@ class SimpleTHSTrader:
         """
         self.__select_menu(['撤单[F3]'])
         self.main_wnd.child_window(class_name="Button", title="撤买(X)").click()
-        keyboard.send_keys("{ENTER}")  # 快捷键
-        time.sleep(0.2)
+        self.app.top_window().wait("ready",timeout=1)
 
         while True:
             """
@@ -90,10 +88,12 @@ class SimpleTHSTrader:
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
                 pywinauto.keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
-                time.sleep(1)
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
+                break
+            elif ("回车即可撤单") in self.app.top_window().Static.texts()[0]:
+                print('操作提示，无需操作。')
                 break
             else:  # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
@@ -106,8 +106,7 @@ class SimpleTHSTrader:
         """
         self.__select_menu(['撤单[F3]'])
         self.main_wnd.child_window(class_name="Button", title="撤卖(C)").click()
-        keyboard.send_keys("{ENTER}")  # 快捷键
-        time.sleep(0.2)
+        self.app.top_window().wait("ready",timeout=1)
 
         while True:
             """
@@ -116,10 +115,12 @@ class SimpleTHSTrader:
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
                 pywinauto.keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
-                time.sleep(1)
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
+                break
+            elif ("回车即可撤单") in self.app.top_window().Static.texts()[0]:
+                print('操作提示，无需操作。')
                 break
             else:  # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
@@ -130,11 +131,9 @@ class SimpleTHSTrader:
         """
         撤买
         """
-        time.sleep(0.5)
         self.__select_menu(['撤单[F3]'])
         self.main_wnd.child_window(class_name="Button", title="全撤(Z /)").click()
-        keyboard.send_keys("{ENTER}")  # 快捷键
-        time.sleep(1)
+        self.app.top_window().wait("ready",timeout=1)
 
         while True:
             """
@@ -142,19 +141,47 @@ class SimpleTHSTrader:
             """
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
-                pywinauto.keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
-                time.sleep(1)
+                keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
+                break
+            elif ("回车即可撤单") in self.app.top_window().Static.texts()[0]:
+                print('操作提示，无需操作。')
                 break
             else:  # 其他情况打印信息后，默认ENTER确认继续
                 print(self.app.top_window().Static.texts()[0])
                 self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
                 continue
 
-    def cancel_by_stock_no(self):
-        print('this is under construction.')
+    def cancel_by_stock_no(self, stock_no):
+        """
+        1. 在撤单页面中，输入证券代码后撤单。
+        2. 新输入证券代码后，会自动覆盖原有的。每家都要测试。
+        """
+        self.__select_menu(['撤单[F3]'])
+        self.main_wnd.child_window(class_name="Edit").set_edit_text(str(stock_no))  # 自动覆盖原有的
+        self.main_wnd.child_window(class_name="Button", title="查询代码").click()
+        self.main_wnd.child_window(class_name="Button", title="全撤(Z /)").click()
+
+        # 关闭提示窗口
+        while True:
+            """
+            按窗口信息提示，进行处理
+            """
+            # 碰到以下情况, 确认退出循环
+            if ("无可撤委托") in self.app.top_window().Static.texts()[0]:
+                print("有问题：", self.app.top_window().Static.texts()[0])
+                self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                print('已取消,请检查。')  # 跳出到return
+                break
+            elif len(self.app.top_window().Static.texts()[0]) == 0:
+                print("没有其他提示，本次操作结束。")
+                break
+            else:  # 其他情况打印信息后，默认ENTER确认继续
+                print(self.app.top_window().Static.texts()[0])
+                self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                continue
 
     def get_balance(self):
         """
@@ -163,7 +190,7 @@ class SimpleTHSTrader:
         self.main_wnd.set_focus()
         self.__select_menu(['查询[F4]', '资金股票'])
         self.close_tsxx()  # 关闭各种提示信息
-        self.main_wnd.child_windows(class_name="Static").wait('ready')
+        self.main_wnd.child_window(class_name="Static", found_index=0).wait("ready", timeout= 2)
         # 有啥打印啥。
         i = 0
         while True:
@@ -172,22 +199,6 @@ class SimpleTHSTrader:
             else:
                 print(self.main_wnd.child_window(class_name="Static", found_index=i).window_text())
                 i += 1
-
-    def check_trade_finished_not_good(self, order_no):
-        """
-        判断订单是否完成
-        用合同编号非常不直观。
-        """
-        self.__select_menu(['卖出[F2]'])
-        time.sleep(1)
-        self.__select_menu(['撤单[F3]'])
-        cancelable_orders = self.__get_grid_data(is_order_sent=True)
-        #        print(cancelable_orders)
-        for i, order in enumerate(cancelable_orders):
-            if str(order["合同编号"]) == str(order_no):  # 如果订单未完成，就意味着可以撤单
-                if order["成交数量"] == 0:
-                    return False
-        return True
 
     def get_position(self):
         """ 获取持仓 """
@@ -222,13 +233,13 @@ class SimpleTHSTrader:
         """
         control_id 要用SPY++ 查到。但很容易变化，尽量不要用。
         """
-        self.main_wnd.child_window(control_id=0x408, class_name="Edit").wait('ready')
+        self.main_wnd.child_window(control_id=0x408, class_name="Edit").wait('ready', timeout=1)
         self.main_wnd.child_window(control_id=0x408, class_name="Edit").set_text(str(stock_no))  # 设置股票代码
         self.main_wnd.child_window(control_id=0x409, class_name="Edit").type_keys("^a{BACKSPACE}")  # 确保删除原输入
         self.main_wnd.child_window(control_id=0x409, class_name="Edit").set_text(str(price))  # 设置价格
         self.main_wnd.child_window(control_id=0x40A, class_name="Edit").set_text(str(amount))  # 设置股数目
         # 点击卖出or买入
-        self.main_wnd.child_window(control_id=0x3EE, class_name="Button").wait('ready')
+        self.main_wnd.child_window(control_id=0x3EE, class_name="Button").wait('ready',timeout=1)
         self.main_wnd.child_window(control_id=0x3EE, class_name="Button").click()
 
         while True:
@@ -257,23 +268,21 @@ class SimpleTHSTrader:
                 continue
 
     def __get_grid_data(self, is_order_sent=False):
-        """ 获取grid里面的数据 """
-        self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl').wait('ready')
-        self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl').set_focus()  # .right_click()  # 模拟右键
+        """ 获取grid里面的数据，在第2个Grid中 """
+        self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=1).set_focus()  # .right_click()  # 模拟右键
         # 复制Grid
-        if not is_order_sent:  # 确认不是针对已发出委托
-            pywinauto.keyboard.send_keys('^c')  # Ctrl+C
-            time.sleep(0.1)
+        if not is_order_sent:  # 不是查询已发出委托
+            keyboard.send_keys('^c')  # Ctrl+C
+        # 跳出验证码窗口
+        self.app.top_window().wait('ready',timeout=2)
         while True:
             # 识别并输入验证码，确认关闭验证码窗口
-            self.app.top_window().child_window(control_id=0x964, class_name='Edit').set_text(self.__get_char())
-            self.app.top_window().set_focus()
-            keyboard.send_keys("{ENTER}")
+            self.app.top_window().child_window(class_name='Edit').set_text(self.__get_char())
+            self.app.top_window().child_window(class_name='Edit').type_keys("{ENTER}")
             try:
                 print(self.app.top_window().child_window(control_id=0x966, class_name='Static').child_window_text())
             except:
                 break
-            time.sleep(0.1)
 
         data = clipboard.GetData()
         df = pd.read_csv(io.StringIO(data), delimiter='\t', na_filter=False)
@@ -300,12 +309,12 @@ class SimpleTHSTrader:
         self.__get_left_menus_handle().get_item(path).click()
 
     def __get_left_menus_handle(self):
-        while True:
+        while True: # 有时需要多次尝试
             try:
                 # 在单一账户登录的情况下，同花顺5.0只有一个child_window 是这个名字，不需要control_id
                 # login()中已避免多账户登录，或同一账户多次登录。
                 handle = self.main_wnd.child_window(class_name='SysTreeView32')
-                handle.wait('ready', 2)  # sometime can't find handle ready, must retry
+                handle.wait('ready', timeout=2)
                 return handle
             except Exception as ex:
                 print(ex)

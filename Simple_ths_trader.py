@@ -24,21 +24,26 @@ class SimpleTHSTrader:
         print("成功启动交易软件。")
 
     def login(self, id: str, pwd: str):
-        self.app.Dialog.ComboBox.Edit.set_edit_text(id)  # 资金账户
-        self.app.Dialog.Edit2.set_edit_text(pwd)  # 交易密码
-        self.app.Dialog.Edit3.set_edit_text(pwd)  # 通信密码
-        if ("中信证券") in self.title:  # 无法自动登录
-            print("10秒输入密码与验证码")
-            time.sleep(10)
-            self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
-        else:
-            self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
+        # 填入前先删除之前的
+        self.app.Dialog.Edit3.set_focus().type_keys('^a{BACKSPACE}') # 通讯码
+        self.app.Dialog.ComboBox.Edit.set_focus().type_keys('^a{BACKSPACE}') #账号
+        self.app.Dialog.Edit2.set_focus().set_edit_text(u'') # 交易密码
+
+        # 再填写验证码
+        if ("中信证券") in self.title:  # 登录时需要填写验证码的
+            self.app.Dialog.Edit3.set_focus().type_keys(self.__get_char_login(threshold=175))  # 验证码
+        else: #登录无需验证码
+            self.app.Dialog.Edit3.set_focus().type_keys(pwd)  # 通讯码
+        # 再填写用户名与密码
+        self.app.Dialog.ComboBox.Edit.set_focus().type_keys(id)  # 账号
+        self.app.Dialog.Edit2.set_focus().type_keys(pwd)  # 交易密码
+        self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
+
         try:
-            self.app.window(title=self.title).wait("ready",timeout=10)
+            self.app.window(title=self.title).wait("ready",timeout=20)
             print("登录成功！以下关闭各种信息窗口：")
             self.main_wnd = self.app.window(title=self.title)
             self.close_tsxx()  # 关闭所有通知信息
-
         except:
             print("登录有问题！请查找原因并重新登录。")
 
@@ -58,12 +63,6 @@ class SimpleTHSTrader:
                 handles[i].close()
             except:
                 handles[i].type_keys("{ENTER}") # 正在清算
-        # 跳出窗口
-        try:
-            self.app.top_window().child_window(title="新股申购").wait("ready",timeout=5)
-            self.app.top_window().child_window(title="新股申购").close()
-        except:
-            print('没有其他弹出窗口')
         print(u'\n==> 所有提示信息窗口 已经关闭!')
 
     # 关闭其他同名交易客户端，self.title
@@ -343,11 +342,13 @@ class SimpleTHSTrader:
     def __get_char_login(self, threshold=200):
         """
         在登录界面就需要识别验证码。
+        threshold: 将200/256转变为白点，对剩下的黑点进行识别。
         """
         file_path = "tmp.png"
 
-        self.app.top_window().capture_as_image().save(file_path)  # 保存验证码
-        captcha_num = captcha_recognize(file_path, threshold)  # 识别验证码
+        self.app.top_window().set_focus().capture_as_image().save(file_path)  # 保存整个登录界面
+        captcha_str = captcha_recognize(file_path, threshold)  # 识别验证码
+        captcha_num = [str(s) for s in captcha_str.split() if s.isdigit()][0]  # str(s) 保留00
         print("captcha result-->", captcha_num)
         return captcha_num
 

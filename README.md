@@ -23,13 +23,11 @@
 
 # Problems Unsolved  
 1. Pywinauto mimics user actions, it will pull app to the front screen when running.  
-2. Due to password mask, when set_edit_text("1234"), the password may be changed to %$#$% 
-and causes log in faliure.  
-3. Not able to listen to the responses from brokers if the sent order is done.  
+2. Not able to listen to the responses from brokers if the sent order is done.  
 
 # Tips to Speed Up A Little with Pywinauto  
 1. Use short-cut keys instead of looking for windows or buttons.  
-2. Locate window with window specifications instead of general names/types.  
+2. Locate window with window specifications instead of general titles or types.  
 3. Use window().wait('ready',timeout) instead of time.sleep() when waiting. 
 
 # What's Next  
@@ -42,8 +40,8 @@ import SimpleTHSTrader
 trader = SimpleTHSTrader(r"C:\东方同花顺独立下单\xiadan.exe") # broker system address
 trader.login("ACCOUNTID","PASSWORD")
 ```
-For one broker software, you can create 2 instances. But this is not necessary. You can change codes in 
-login() function to achieve this.        
+If you need two instances for one account, you can change codes in login() function to achieve this. 
+I don't think this is necessary.          
 The result:
 ```shell script
 登录成功！以下关闭各种信息窗口：
@@ -54,7 +52,6 @@ The result:
 关闭该窗口: "['']" 
 关闭该窗口: "['']" 
 ```
-Login Citic Security needs manually input password and captcha. 
 
 2. Send Order
 ````python

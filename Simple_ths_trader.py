@@ -25,8 +25,8 @@ class SimpleTHSTrader:
 
     def login(self, id: str, pwd: str):
         # 填入前先删除之前的
-        self.app.Dialog.Edit3.set_focus().type_keys('^a{BACKSPACE}') # 通讯码
-        self.app.Dialog.ComboBox.Edit.set_focus().type_keys('^a{BACKSPACE}') #账号
+        self.app.Dialog.Edit3.set_focus().set_edit_text(u'') # 通讯码/验证码
+        self.app.Dialog.ComboBox.Edit.set_focus().set_edit_text(u'') #账号
         self.app.Dialog.Edit2.set_focus().set_edit_text(u'') # 交易密码
 
         # 再填写验证码
@@ -35,12 +35,12 @@ class SimpleTHSTrader:
         else: #登录无需验证码
             self.app.Dialog.Edit3.set_focus().type_keys(pwd)  # 通讯码
         # 再填写用户名与密码
-        self.app.Dialog.ComboBox.Edit.set_focus().type_keys(id)  # 账号
+        self.app.Dialog.ComboBox.Edit.set_edit_text(id)  # 账号
         self.app.Dialog.Edit2.set_focus().type_keys(pwd)  # 交易密码
         self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
 
         try:
-            self.app.window(title=self.title).wait("ready",timeout=20)
+            self.app.window(title=self.title).wait("ready",timeout=10)
             print("登录成功！以下关闭各种信息窗口：")
             self.main_wnd = self.app.window(title=self.title)
             self.close_tsxx()  # 关闭所有通知信息
@@ -56,6 +56,7 @@ class SimpleTHSTrader:
         3. 提示信息窗口都是独立(非内嵌的)的。
         4. 提示信息窗口直接用close()关闭，Y/N选择窗口不行。
         '''
+        self.app.window(class_name='#32770',found_index=0).wait("ready",timeout=5)
         handles = self.app.windows(class_name='#32770')
         for i in list(range(0, len(handles))):
             print(u'...关闭该窗口: "%s" ' % (handles[i].texts()))
@@ -104,7 +105,7 @@ class SimpleTHSTrader:
             """
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
-                pywinauto.keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                self.app.top_window().type_keys("{ENTER}") # 快捷键ENTER = 确定。
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
@@ -131,7 +132,7 @@ class SimpleTHSTrader:
             """
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
-                pywinauto.keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
@@ -158,7 +159,7 @@ class SimpleTHSTrader:
             """
             if ("无可撤委托" or "成功提交" or "提交失败") in self.app.top_window().Static.texts()[0]:
                 print(self.app.top_window().Static.texts())
-                keyboard.send_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                self.app.top_window().type_keys("{ENTER}") # 快捷键ENTER = 确定。
                 break  # 跳出到return
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print('没有其他提示，本次操作结束。')
@@ -224,7 +225,7 @@ class SimpleTHSTrader:
                 print('查询完毕', self.main_wnd.child_window(class_name="Static", found_index=i).window_text())
                 break
 
-    def get_position(self):
+    def get_position(self, require_dates = False):
         """ 获取持仓 """
         self.main_wnd.set_focus()
         self.__select_menu(['查询[F4]', '资金股票'])
@@ -234,7 +235,7 @@ class SimpleTHSTrader:
             self.close_tsxx()
         except:
             pass
-        return self.__get_grid_data()
+        return self.__get_grid_data(require_dates = False)
 
     def get_today_order_sent(self):
         """ 获取当日委托单 """
@@ -247,7 +248,7 @@ class SimpleTHSTrader:
         self.__select_menu(['查询[F4]', '当日成交'])
         return self.__get_grid_data()
 
-    def get_bills(self,require_dates = True):
+    def get_bills(self, require_dates = False):
         """
         简单实现默认时间段内的对账单功能
         1. 不支持自定义查询日期段
@@ -291,6 +292,10 @@ class SimpleTHSTrader:
                 self.app.top_window().type_keys("%n")  # 快捷键ALT+N = 否。
                 print('超出涨跌停限制，已取消下单')  # 跳出到return
                 break
+            elif self.app.top_window().child_window(title="委托确认", class_name="Static").exists():
+                self.app.top_window().type_keys("{ENTER}")  # 快捷键ENTER = 确定。
+                print("没有其他提示，本次操作结束。")
+                continue
             elif len(self.app.top_window().Static.texts()[0]) == 0:
                 print("没有其他提示，本次操作结束。")
                 break
@@ -354,9 +359,7 @@ class SimpleTHSTrader:
 
     def __select_menu(self, path):
         """ 点击左边菜单 """
-        if r"网上股票" or r"网上交易" not in self.main_wnd.window_text():  # 确保在主交易窗口中选择
-            self.main_wnd.set_focus()  # 激活平台
-            pywinauto.keyboard.send_keys("{ENTER}")
+        self.main_wnd.set_focus().type_keys("{ENTER}")  # 激活平台
         self.__get_left_menus_handle().get_item(path).click()
 
     def __get_left_menus_handle(self):

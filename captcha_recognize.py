@@ -3,7 +3,7 @@ from PIL import Image
 
 def captcha_recognize(img_path, threshold = 200):
     """
-    200/256 转为白色，这个比较较高。
+    200/256 转为白色，这个比较高。
     """
     im = Image.open(img_path).convert("L") #translating a color image to greyscale
     # 1. threshold the image

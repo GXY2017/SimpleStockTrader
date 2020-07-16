@@ -18,27 +18,39 @@ class SimpleTHSTrader:
         """
         self.exe_path = exe_path
         self.title = main_wnd_title
-        self.close_client()  # 关闭已有的交易端，避免同一账号重复登录。不关闭多开的登录界面
-        self.app = pywinauto.Application().start(self.exe_path, timeout=10)  # 生成后台实例
-        self.app.top_window().wait("ready", timeout=10) # 等待登录界面打开
+
+        # 关闭已有的交易端，避免同一账号重复登录。不关闭多开的登录界面
+        self.close_client()
+
+        # 生成交易软件实例，# 等待登录界面打开
+        self.app = pywinauto.Application().start(self.exe_path, timeout=10)
+        self.app.top_window().wait("ready", timeout=10)
         print("成功启动交易软件。")
 
     def login(self, id: str, pwd: str):
+        """
+        填写信息后登录。
+        1. 密码容易出错，使用 set_focus().type_keys()。但速度会慢
+        2. 对没有验证码的，密码即通讯码。
+        3. 在识别验证码时，为避免账号的干扰，先填写验证码再填写账号
+        """
         # 填入前先删除之前的
         self.app.Dialog.Edit3.set_focus().set_edit_text(u'') # 通讯码/验证码
         self.app.Dialog.ComboBox.Edit.set_focus().set_edit_text(u'') #账号
         self.app.Dialog.Edit2.set_focus().set_edit_text(u'') # 交易密码
 
-        # 再填写验证码
-        if ("中信证券") in self.title:  # 登录时需要填写验证码的
-            self.app.Dialog.Edit3.set_focus().type_keys(self.__get_char_login(threshold=175))  # 验证码
+        # 优先填写验证码
+        if ("中信证券") in self.title:
+            self.app.Dialog.Edit3.set_edit_text(self.__get_char_login(threshold=175))  # 验证码
         else: #登录无需验证码
-            self.app.Dialog.Edit3.set_focus().type_keys(pwd)  # 通讯码
-        # 再填写用户名与密码
+            self.app.Dialog.Edit3.set_edit_text(pwd)  # 通讯码
+
+        # 然后填写账号与密码
         self.app.Dialog.ComboBox.Edit.set_edit_text(id)  # 账号
         self.app.Dialog.Edit2.set_focus().type_keys(pwd)  # 交易密码
         self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
 
+        # 关闭登录后的弹出窗口
         try:
             self.app.window(title=self.title).wait("ready",timeout=10)
             print("登录成功！以下关闭各种信息窗口：")
@@ -50,13 +62,13 @@ class SimpleTHSTrader:
     # 关闭提示信息
     def close_tsxx(self):
         '''
-        关闭同时弹出的提示窗口。
+        关闭同时存在的多个提示窗口。
         1. 提示信息窗口编号都是'#32770'，一下子会跳出来好几个。
         2. app.windows()[0] 等价于 app.window()。
         3. 提示信息窗口都是独立(非内嵌的)的。
         4. 提示信息窗口直接用close()关闭，Y/N选择窗口不行。
         '''
-        self.app.window(class_name='#32770',found_index=0).wait("ready",timeout=5)
+        # 一并获取后，逐个关闭。
         handles = self.app.windows(class_name='#32770')
         for i in list(range(0, len(handles))):
             print(u'...关闭该窗口: "%s" ' % (handles[i].texts()))
@@ -71,13 +83,18 @@ class SimpleTHSTrader:
         '''
         关闭交易客户端：
         1. 关闭本地电脑上,已登录的同名交易客户端。只能关闭一个。
+        2. self.app.window(title = xxx).close() # 这个只关闭当前客户端的窗口
+        关闭用户登录窗口
+        1. 登录窗口编号为 #32770
         '''
-        # self.app.window(title = u"网上股票交易系统5.0").close() # 这个只关闭当前客户端的窗口
-        handler = pywinauto.findwindows.find_windows(title=self.title)  # 找到本地电脑上所有同名客户端
+        # 找到本地电脑上所有同名客户端
+        try:
+            handler = pywinauto.findwindows.find_windows(title=self.title)
+        except:
+            handler = pywinauto.findwindows.find_windows(class_name ="#32770")
         for i in list(range(0, len(handler))):
             print(u'...关闭一个同名客户端:')
-            pywinauto.Application().connect(handle=handler[i]).window(title=self.title).close()
-            # pywinauto.Application().connect(handle=handler).kill() # 关闭时自动结束进程。
+            pywinauto.Application().connect(handle=handler[i]).kill()
 
     def buy(self, stock_no, price, amount):
         """ 买入 """
@@ -253,13 +270,15 @@ class SimpleTHSTrader:
         简单实现默认时间段内的对账单功能
         1. 不支持自定义查询日期段
         2. 使用客户端的默认汇总方式
-        3. 也没碰到过要翻页的情况
+        3. 也没碰到过要翻页的情况, 所以暂无处理
+        4. 不同平台，对账单窗体的名称不同。但又没有快捷键
         """
         self.main_wnd.set_focus()
         if "中信证券" in self.title:
             self.__select_menu(['查询[F4]', '对账单'])
         else:
             self.__select_menu(['查询[F4]', '对 账 单'])
+
         return self.__get_grid_data(require_dates)
 
     def __trade(self, stock_no, price, amount):
@@ -267,10 +286,10 @@ class SimpleTHSTrader:
         control_id 要用SPY++ 查到。但很容易变化，尽量不要用。
         """
         self.main_wnd.child_window(control_id=0x408, class_name="Edit").wait('ready', timeout=1)
-        self.main_wnd.child_window(control_id=0x408, class_name="Edit").set_text(str(stock_no))  # 设置股票代码
-        self.main_wnd.child_window(control_id=0x409, class_name="Edit").type_keys("^a{BACKSPACE}")  # 确保删除原输入
-        self.main_wnd.child_window(control_id=0x409, class_name="Edit").set_text(str(price))  # 设置价格
-        self.main_wnd.child_window(control_id=0x40A, class_name="Edit").set_text(str(amount))  # 设置股数目
+        self.main_wnd.child_window(control_id=0x408, class_name="Edit").set_edit_text(str(stock_no))  # 设置股票代码
+        self.main_wnd.child_window(control_id=0x409, class_name="Edit").set_edit_text(u"")  # 确保删除原输入
+        self.main_wnd.child_window(control_id=0x409, class_name="Edit").set_edit_text(str(price))  # 设置价格
+        self.main_wnd.child_window(control_id=0x40A, class_name="Edit").set_edit_text(str(amount))  # 设置股数目
         # 点击卖出or买入
         self.main_wnd.child_window(control_id=0x3EE, class_name="Button").wait('ready',timeout=1)
         self.main_wnd.child_window(control_id=0x3EE, class_name="Button").click()
@@ -305,18 +324,26 @@ class SimpleTHSTrader:
                 continue
 
     def __get_grid_data(self, require_dates = False):
-        """ GRID数据有时有两个子窗口。一个填日期，一个显示数据。"""
+        """
+        取得GRID窗口中的数据。
+        1. require_dates = True， 有些平台有两个子窗口。一个填日期，一个显示数据。
+        2. require_dates = False， 有些平台带日期，但只有一个GRID窗口。
+        """
         if require_dates:
             self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=1).set_focus()  # .right_click()  # 模拟右键
         else:
             self.main_wnd.child_window(title="Custom1", class_name='CVirtualGridCtrl', found_index=0).set_focus()
+
         # 复制
         keyboard.send_keys('^c')  # Ctrl+C
+
         # 跳出验证码窗口
         self.app.top_window().wait('ready',timeout=2)
+
         # 验证码错误就重新输入
         trial = 1
-        while trial <=5: # 最多尝试5次识别，避免循环
+        # 最多尝试5次识别，避免循环
+        while trial <=5:
             # 识别并输入验证码，确认关闭验证码窗口
             print("最多识别5次，现在第%d次"%trial)
             self.app.top_window().child_window(class_name='Edit').set_text(self.__get_char())
@@ -347,26 +374,30 @@ class SimpleTHSTrader:
     def __get_char_login(self, threshold=200):
         """
         在登录界面就需要识别验证码。
-        threshold: 将200/256转变为白点，对剩下的黑点进行识别。
+        1. threshold: 将256色中的200色转变为白点，对剩下的黑点进行识别。
+        2. 由于找不到验证码的窗口信息，因此截取整个登录窗口后验证。
         """
         file_path = "tmp.png"
-
-        self.app.top_window().set_focus().capture_as_image().save(file_path)  # 保存整个登录界面
+        # 保存整个登录界面
+        self.app.top_window().set_focus().capture_as_image().save(file_path)
         captcha_str = captcha_recognize(file_path, threshold)  # 识别验证码
-        captcha_num = [str(s) for s in captcha_str.split() if s.isdigit()][0]  # str(s) 保留00
+        captcha_num = [str(s) for s in captcha_str.split() if s.isdigit()][0]  # 使用int(s)会剔除整数前的0
         print("captcha result-->", captcha_num)
         return captcha_num
 
     def __select_menu(self, path):
         """ 点击左边菜单 """
-        self.main_wnd.set_focus().type_keys("{ENTER}")  # 激活平台
+        # 激活客户端
+        self.main_wnd.set_focus()
         self.__get_left_menus_handle().get_item(path).click()
 
     def __get_left_menus_handle(self):
-        while True: # 有时需要多次尝试
+        """
+        取得左侧菜单控制柄
+        1. 有时需要多次尝试
+        """
+        while True:
             try:
-                # 在单一账户登录的情况下，同花顺5.0只有一个child_window 是这个名字，不需要control_id
-                # login()中已避免多账户登录，或同一账户多次登录。
                 handle = self.main_wnd.child_window(class_name='SysTreeView32')
                 handle.wait('ready', timeout=2)
                 return handle

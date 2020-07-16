@@ -1,10 +1,11 @@
 # Purpose of SimpleStockTrader  
-1. To automate the whole process when trading China onshore stocks, convertible bonds and funds.  
-2. List of compatible broker systems  
+1. To automate the whole process when trading China onshore stocks, convertible bonds, funds and repos.  
+2. This project focuses on user login and order execution. It excludes market data and strategies.  
+3. List of connected broker trading platform  
     (1) Orient Securities, 东方证券同花顺独立交易系统  
     (2) Citic Securities, 中信证券至胜全能版独立交易系统
 # Requirements  
-1. Python 3.x but avoid Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867).   
+1. Python 3.x but please avoid using Python 3.7.6 since there is [a problem](https://github.com/pywinauto/pywinauto/issues/867).   
 2. Better to use python 32 bit. 64 bit Python you will get a warning.  
 3. Open account with your broker  
     (1) Inform your broker of the markets you want to trade, Shanghai A share, Shenzhen A share, ETFs, futures, ETF options, etc..    
@@ -32,6 +33,13 @@
 
 # What's Next  
 1. connect to more brokers  
+
+# Even More
+1. Github [China-quant](https://github.com/china-quant) is a good reference. 
+2. Here is an archived project two years ago, [TdxTradeServer](https://github.com/rainx/TdxTradeServer), 
+which is based on trade.dll file. Obviously, it goes deeper and runs faster. This is a C++ project.  
+   This maybe a good direction to avoid operating via GUI.  
+
 
 # Examples
 1. Log in 

@@ -47,7 +47,7 @@ class SimpleTHSTrader:
 
         # 然后填写账号与密码
         self.app.Dialog.ComboBox.Edit.set_edit_text(id)  # 账号
-        self.app.Dialog.Edit2.set_focus().type_keys(pwd)  # 交易密码
+        self.app.Dialog.Edit2.set_focus().type_keys(pwd)  # 交易密码,键盘输入
         self.app.Dialog.child_window(class_name="Button", found_index=0).click()  # 限定子窗口再click()
 
         # 关闭登录后的弹出窗口

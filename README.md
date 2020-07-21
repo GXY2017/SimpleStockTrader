@@ -33,13 +33,21 @@
 
 # What's Next  
 1. connect to more brokers  
+- Tdx (通达信) seems to be anti-automation. I tried [JinChangJiang 金长江财智版V11.82](https://www.95579.com/main/software/index.shtml) 
+,which is based on Tdx system. I cannot type_keys() to password and account windows.  
 
 # Even More
 1. Github [China-quant](https://github.com/china-quant) is a good reference. 
 2. Here is an archived project two years ago, [TdxTradeServer](https://github.com/rainx/TdxTradeServer), 
 which is based on trade.dll file. Obviously, it goes deeper and runs faster. This is a C++ project.  
    This maybe a good direction to avoid operating via GUI.  
+3. [Automate trade module in Tdxw](https://www.cnblogs.com/duan-qs/p/10296462.html) gives a good example to automate
+tqd platform. It is a python 2.x project.  
 
+# Useful Tools    
+1. Inspect installed with Visual Studio    
+2. Accessbility Insights installed with windows SDK, "entire app" mode    
+3. Spy++ installed with windows SDK    
 
 # Examples
 1. Log in 
